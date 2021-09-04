@@ -51,13 +51,19 @@ namespace controltime.Functions.Functions
             TableOperation addOperation = TableOperation.Insert(controltimeEntity);
             await controltimeTable.ExecuteAsync(addOperation);
 
+
             //TODO: Check this conditional
+
+            //string message = "New time stored in table";
+            //log.LogInformation(message);
+
             if (controltime.Type == "0")
             {
                 return new OkObjectResult(new Response
                 {
                     IsSuccess = true,
-                    Message = "New entry time stored in table",
+                    //Message = message,
+                    message = "New input time stored in table",
                     Result = controltimeEntity
                 });
             }
@@ -66,7 +72,8 @@ namespace controltime.Functions.Functions
                 return new OkObjectResult(new Response
                 {
                     IsSuccess = true,
-                    Message = "New departure time stored in table",
+                    //Message = message,
+                    message = "New out time stored in table",
                     Result = controltimeEntity
                 });
             }
