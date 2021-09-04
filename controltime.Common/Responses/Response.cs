@@ -6,6 +6,8 @@ namespace controltime.Common.Responses
 {
     public class Response
     {
+        public string message;
+
         public bool IsSuccess { get; set; }
 
         public string Message { get; set; }
