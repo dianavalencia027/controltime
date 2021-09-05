@@ -89,7 +89,6 @@ namespace controltime.Functions.Functions
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             ControlTime controltime = JsonConvert.DeserializeObject<ControlTime>(requestBody);
 
-            //TODO: Validate how to update the date
             TableOperation findOperation = TableOperation.Retrieve<ControlTimeEntity>("CONTROLTIME", id);
             TableResult findResult = await controltimeTable.ExecuteAsync(findOperation);
             if (findResult.Result == null)
@@ -103,10 +102,14 @@ namespace controltime.Functions.Functions
 
             // Update ControlTime
             ControlTimeEntity controltimeEntity = (ControlTimeEntity)findResult.Result;
-            controltimeEntity.Consolidated = controltimeEntity.Consolidated;
             if (!string.IsNullOrEmpty(controltime.Type))
             {
                 controltimeEntity.Type = controltime.Type;
+            }
+
+            if (controltime.Time != default)
+            {
+                controltimeEntity.InputTime = controltime.Time;
             }
 
             TableOperation addOperation = TableOperation.Replace(controltimeEntity);
