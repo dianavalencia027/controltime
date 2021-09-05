@@ -128,7 +128,26 @@ namespace controltime.Functions.Functions
         }
 
 
+        [FunctionName(nameof(GetAllControlTimes))]
+        public static async Task<IActionResult> GetAllControlTimes(
+          [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "controltime")] HttpRequest req,
+          [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
+          ILogger log)
+        {
+            log.LogInformation("Get all Control Time received");
 
+            TableQuery<ControlTimeEntity> query = new TableQuery<ControlTimeEntity>();
+            TableQuerySegment<ControlTimeEntity> controltimes = await controltimeTable.ExecuteQuerySegmentedAsync(query, null);
 
+            string message = "Retrieved all Control Time";
+            log.LogInformation(message);
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = controltimes
+            });
+        }
     }
 }
