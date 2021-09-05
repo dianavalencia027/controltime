@@ -180,6 +180,35 @@ namespace controltime.Functions.Functions
         }
 
 
+        [FunctionName(nameof(DeleteControlTime))]
+        public static async Task<IActionResult> DeleteControlTime(
+           [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "controltime/{id}")] HttpRequest req,
+           [Table("controltime", "CONTROLTIME", "{id}", Connection = "AzureWebJobsStorage")] ControlTimeEntity controltimeEntity,
+           [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
+           string id,
+           ILogger log)
+        {
+            log.LogInformation($"Delete Control time: {id}, received");
 
+            if (controltimeEntity == null)
+            {
+                return new BadRequestObjectResult(new Response
+                {
+                    IsSuccess = false,
+                    Message = "Control time not found"
+                });
+            }
+
+            await controltimeTable.ExecuteAsync(TableOperation.Delete(controltimeEntity));
+            string message = $"Control time: {controltimeEntity.RowKey}, deleted";
+            log.LogInformation(message);
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = controltimeEntity
+            });
+        }
     }
 }
