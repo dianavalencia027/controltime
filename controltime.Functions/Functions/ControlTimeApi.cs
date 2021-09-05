@@ -1,16 +1,16 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Microsoft.WindowsAzure.Storage.Table;
 using controltime.Common.Models;
 using controltime.Common.Responses;
 using controltime.Functions.Entities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage.Table;
+using Newtonsoft.Json;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace controltime.Functions.Functions
 {
@@ -23,7 +23,7 @@ namespace controltime.Functions.Functions
             ILogger log)
         {
             log.LogInformation("A new time stamp was received");
-         
+
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             ControlTime controltime = JsonConvert.DeserializeObject<ControlTime>(requestBody);
 
@@ -38,7 +38,7 @@ namespace controltime.Functions.Functions
 
             ControlTimeEntity controltimeEntity = new ControlTimeEntity
             {
-                EmployeeID= controltime.EmployeeID,
+                EmployeeID = controltime.EmployeeID,
                 InputTime = DateTime.UtcNow,
                 OutputTime = DateTime.UtcNow,
                 ETag = "*",
@@ -78,6 +78,54 @@ namespace controltime.Functions.Functions
                 });
             }
         }
+
+
+        [FunctionName(nameof(UpdateControlTime))]
+        public static async Task<IActionResult> UpdateControlTime(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "controltime/{id}")] HttpRequest req,
+            [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
+            string id,
+            ILogger log)
+        {
+            log.LogInformation($"Update for control time: {id}, received");
+
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            ControlTime controltime = JsonConvert.DeserializeObject<ControlTime>(requestBody);
+
+            // Validate ControlTime x id
+            TableOperation findOperation = TableOperation.Retrieve<ControlTimeEntity>("TODO", id);
+            TableResult findResult = await controltimeTable.ExecuteAsync(findOperation);
+            if (findResult.Result == null)
+            {
+                return new BadRequestObjectResult(new Response
+                {
+                    IsSuccess = false,
+                    Message = "Control time not found"
+                });
+            }
+
+            // Update todo
+            ControlTimeEntity controltimeEntity = (ControlTimeEntity)findResult.Result;
+            controltimeEntity.Consolidated = controltimeEntity.Consolidated;
+            if (!string.IsNullOrEmpty(controltime.Type))
+            {
+                controltimeEntity.Type = controltime.Type;
+            }
+
+            TableOperation addOperation = TableOperation.Replace(controltimeEntity);
+            await controltimeTable.ExecuteAsync(addOperation);
+
+            string message = $"Control time: {id}, updated in table";
+            log.LogInformation(message);
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = controltimeEntity
+            });
+        }
+
 
 
     }
