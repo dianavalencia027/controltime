@@ -93,7 +93,6 @@ namespace controltime.Functions.Functions
             ControlTime controltime = JsonConvert.DeserializeObject<ControlTime>(requestBody);
 
             //TODO: Validate how to update the date
-            // Validate ControlTime id
             TableOperation findOperation = TableOperation.Retrieve<ControlTimeEntity>("CONTROLTIME", id);
             TableResult findResult = await controltimeTable.ExecuteAsync(findOperation);
             if (findResult.Result == null)
@@ -149,5 +148,38 @@ namespace controltime.Functions.Functions
                 Result = controltimes
             });
         }
+
+
+        [FunctionName(nameof(GetControlTimeById))]
+        public static IActionResult GetControlTimeById(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "controltime/{id}")] HttpRequest req,
+            [Table("controltime", "CONTROLTIME", "{id}", Connection = "AzureWebJobsStorage")] ControlTimeEntity controltimeEntity,
+            string id,
+            ILogger log)
+        {
+            log.LogInformation($"Get control time by id: {id}, received");
+
+            if (controltimeEntity == null)
+            {
+                return new BadRequestObjectResult(new Response
+                {
+                    IsSuccess = false,
+                    Message = "Control time not found"
+                });
+            }
+
+            string message = $"Control time: {controltimeEntity.RowKey}, retrieved";
+            log.LogInformation(message);
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = controltimeEntity
+            });
+        }
+
+
+
     }
 }
