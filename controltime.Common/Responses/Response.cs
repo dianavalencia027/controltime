@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace controltime.Common.Responses
+﻿namespace controltime.Common.Responses
 {
     public class Response
     {
