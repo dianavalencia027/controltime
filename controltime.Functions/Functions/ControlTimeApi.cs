@@ -27,20 +27,19 @@ namespace controltime.Functions.Functions
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             ControlTime controltime = JsonConvert.DeserializeObject<ControlTime>(requestBody);
 
-            if (string.IsNullOrEmpty(controltime?.Type))
+            if (string.IsNullOrEmpty(controltime?.Type) || controltime.Time == default)
             {
                 return new BadRequestObjectResult(new Response
                 {
                     IsSuccess = false,
-                    Message = "The request must have a type (0: Input, 1: Output)"
+                    Message = $"The request must have a type (0: Input, 1: Output) and time"
                 });
             }
 
             ControlTimeEntity controltimeEntity = new ControlTimeEntity
             {
                 EmployeeID = controltime.EmployeeID,
-                InputTime = DateTime.UtcNow,
-                OutputTime = DateTime.UtcNow,
+                InputTime = controltime.Time.ToUniversalTime(),
                 ETag = "*",
                 Consolidated = false,
                 PartitionKey = "CONTROLTIME",
@@ -51,29 +50,27 @@ namespace controltime.Functions.Functions
             TableOperation addOperation = TableOperation.Insert(controltimeEntity);
             await controltimeTable.ExecuteAsync(addOperation);
 
-
-            //TODO: Check this conditional
-
-            //string message = "New time stored in table";
-            //log.LogInformation(message);
-
             if (controltime.Type == "0")
             {
+                string message = "New employee input time stored in table";
+                log.LogInformation(message);
+
                 return new OkObjectResult(new Response
                 {
                     IsSuccess = true,
-                    //Message = message,
-                    message = "New input time stored in table",
+                    Message = message,
                     Result = controltimeEntity
                 });
             }
             else
             {
+                string message = "New employee output time stored in table";
+                log.LogInformation(message);
+
                 return new OkObjectResult(new Response
                 {
                     IsSuccess = true,
-                    //Message = message,
-                    message = "New out time stored in table",
+                    Message = message,
                     Result = controltimeEntity
                 });
             }

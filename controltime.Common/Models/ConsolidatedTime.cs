@@ -6,7 +6,7 @@ namespace controltime.Common.Models
     {
         public int EmployeeID { get; set; }
 
-        public DateTime date { get; set; }
+        public DateTime Date { get; set; }
 
         public int MinutesWorked { get; set; }
     }

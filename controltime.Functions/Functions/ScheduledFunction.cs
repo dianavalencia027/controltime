@@ -10,26 +10,34 @@ namespace controltime.Functions.Functions
     public static class ScheduledFunction
     {
         //TODO: Validate time calculation
-        [FunctionName("ScheduledFunction")]
-        public static async Task Run(
-            [TimerTrigger("0 */2 * * * *")] TimerInfo myTimer,
-            [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
-            ILogger log)
-        {
-            log.LogInformation($"Deleting completed function executed at: {DateTime.Now}");
+        //[FunctionName("ScheduledFunction")]
+        //public static async Task Run(
+        //    [TimerTrigger("0 */2 * * * *")] TimerInfo myTimer,
+        //    [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
+        //    ILogger log)
+        //{
+        //    log.LogInformation($"Deleting completed function executed at: {DateTime.Now}");
 
-            string filter = TableQuery.GenerateFilterConditionForBool("Consolidated", QueryComparisons.Equal, true);
-            TableQuery<ControlTimeEntity> query = new TableQuery<ControlTimeEntity>().Where(filter);
-            TableQuerySegment<ControlTimeEntity> completedControlTimes = await controltimeTable.ExecuteQuerySegmentedAsync(query, null);
-            int deleted = 0;
-            foreach (ControlTimeEntity completedcontrolTime in completedControlTimes)
-            {
-                await controltimeTable.ExecuteAsync(TableOperation.Delete(completedcontrolTime));
-                deleted++;
-            }
+        //    string filter = TableQuery.GenerateFilterConditionForBool("Consolidated", QueryComparisons.Equal, true);
+        //    TableQuery<ControlTimeEntity> query = new TableQuery<ControlTimeEntity>().Where(filter);
+        //    TableQuerySegment<ControlTimeEntity> completedControlTimes = await controltimeTable.ExecuteQuerySegmentedAsync(query, null);
 
-            log.LogInformation($"Deleted: {deleted} items at: {DateTime.Now}");
+        //    ConsolidatedTimeEntity consolidatedTimeEntity = new ConsolidatedTimeEntity
+        //    {
+        //        EmployeeID = employee.EmployeeID,
+        //        Date = employee.Date.ToString("yyyy-MM-dd"),
+        //        MinutesWorked = minutesWorked
+        //    };
 
-        }
+        //    int deleted = 0;
+        //    foreach (ControlTimeEntity completedcontrolTime in completedControlTimes)
+        //    {
+        //        await controltimeTable.ExecuteAsync(TableOperation.Delete(completedcontrolTime));
+        //        deleted++;
+        //    }
+
+        //    log.LogInformation($"Deleted: {deleted} items at: {DateTime.Now}");
+
+        //}
     }
 }

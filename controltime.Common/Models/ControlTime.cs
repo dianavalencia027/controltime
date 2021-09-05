@@ -6,9 +6,9 @@ namespace controltime.Common.Models
     {
         public int EmployeeID { get; set; }
 
-        public DateTime InputTime { get; set; }
+        public DateTime Time { get; set; }
 
-        public DateTime OutputTime { get; set; }
+        //public DateTime OutputTime { get; set; }
 
         public string Type { get; set; }
 
