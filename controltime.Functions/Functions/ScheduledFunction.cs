@@ -3,41 +3,80 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace controltime.Functions.Functions
 {
     public static class ScheduledFunction
     {
-        //TODO: Validate time calculation
-        //[FunctionName("ScheduledFunction")]
-        //public static async Task Run(
-        //    [TimerTrigger("0 */2 * * * *")] TimerInfo myTimer,
-        //    [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
-        //    ILogger log)
-        //{
-        //    log.LogInformation($"Deleting completed function executed at: {DateTime.Now}");
+        [FunctionName("ScheduledFunction")]
+        public static async Task Run(
+            [TimerTrigger("* * * * *")] TimerInfo myTimer,
+            [Table("controltime", Connection = "AzureWebJobsStorage")] CloudTable controltimeTable,
+            [Table("consolidatedtime", Connection = "AzureWebJobsStorage")] CloudTable consolidatedTimeTable,
+            ILogger log)
+        {
+            log.LogInformation($"Calculating Minutes Worked");
 
-        //    string filter = TableQuery.GenerateFilterConditionForBool("Consolidated", QueryComparisons.Equal, true);
-        //    TableQuery<ControlTimeEntity> query = new TableQuery<ControlTimeEntity>().Where(filter);
-        //    TableQuerySegment<ControlTimeEntity> completedControlTimes = await controltimeTable.ExecuteQuerySegmentedAsync(query, null);
+            string filter = TableQuery.GenerateFilterConditionForBool("Consolidated", QueryComparisons.Equal, false);
+            TableQuery<ControlTimeEntity> query = new TableQuery<ControlTimeEntity>().Where(filter);
+            TableQuerySegment<ControlTimeEntity> completedControlTimes = await controltimeTable.ExecuteQuerySegmentedAsync(query, null);
 
-        //    ConsolidatedTimeEntity consolidatedTimeEntity = new ConsolidatedTimeEntity
-        //    {
-        //        EmployeeID = employee.EmployeeID,
-        //        Date = employee.Date.ToString("yyyy-MM-dd"),
-        //        MinutesWorked = minutesWorked
-        //    };
+            foreach (var completedcontrolTime in completedControlTimes.GroupBy(c => c.EmployeeID))
+            {
+                ConsolidatedTimeEntity consolidatedTimeEntity = new ConsolidatedTimeEntity
+                {
+                    EmployeeID = completedcontrolTime.Key,
+                    Date = DateTime.Parse(completedcontrolTime.First().InputTime.ToShortDateString()),
+                    MinutesWorked = await GetMinutesWorked(completedcontrolTime.ToList(), controltimeTable),
+                    ETag = "*",
+                    PartitionKey = "CONSOLIDATEDTIME",
+                    RowKey = Guid.NewGuid().ToString(),
+                };
 
-        //    int deleted = 0;
-        //    foreach (ControlTimeEntity completedcontrolTime in completedControlTimes)
-        //    {
-        //        await controltimeTable.ExecuteAsync(TableOperation.Delete(completedcontrolTime));
-        //        deleted++;
-        //    }
+                if (consolidatedTimeEntity.MinutesWorked > 0)
+                {
+                    await consolidatedTimeTable.ExecuteAsync(TableOperation.Insert(consolidatedTimeEntity));
+                }
+            }
 
-        //    log.LogInformation($"Deleted: {deleted} items at: {DateTime.Now}");
+            log.LogInformation($"To be continued...");
 
-        //}
+        }
+
+        private static async Task<int> GetMinutesWorked(List<ControlTimeEntity> completedcontrolTime, CloudTable controltimeTable)
+        {
+            completedcontrolTime = completedcontrolTime.OrderBy(c => c.Timestamp).ToList();
+            List<ControlTimeEntity> input = completedcontrolTime.Where(c => c.Type == "0").ToList();
+            List<ControlTimeEntity> output = completedcontrolTime.Where(c => c.Type == "1").ToList();
+
+            if (input.Count != output.Count)
+            {
+                input.RemoveAt(input.Count - 1);
+            }
+
+            TimeSpan minutesWorked = default;
+
+            for (int i = 0; i < input.Count; i++)
+            {
+                minutesWorked += output[i].InputTime.Subtract(input[i].InputTime);
+            }
+
+            if (minutesWorked != default)
+            {
+                var controlTimeToUpdateList = input.Concat(output);
+
+                foreach (var controlTimeToUpdate in controlTimeToUpdateList)
+                {
+                    controlTimeToUpdate.Consolidated = true;
+                    TableOperation updateOperation = TableOperation.Replace(controlTimeToUpdate);
+                    await controltimeTable.ExecuteAsync(updateOperation);
+                }
+            }
+
+            return int.Parse(minutesWorked.TotalMinutes.ToString());
+        }
     }
 }

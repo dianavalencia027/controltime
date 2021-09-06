@@ -126,7 +126,6 @@ namespace controltime.Functions.Functions
             });
         }
 
-        //TODO: Validate how to get all 
         [FunctionName(nameof(GetAllControlTimes))]
         public static async Task<IActionResult> GetAllControlTimes(
           [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "controltime")] HttpRequest req,
@@ -149,7 +148,6 @@ namespace controltime.Functions.Functions
             });
         }
 
-        //TODO: Validate how to get control time by ID
         [FunctionName(nameof(GetControlTimeById))]
         public static IActionResult GetControlTimeById(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "controltime/{id}")] HttpRequest req,
@@ -179,7 +177,6 @@ namespace controltime.Functions.Functions
             });
         }
 
-        //TODO: Validate delete function
         [FunctionName(nameof(DeleteControlTime))]
         public static async Task<IActionResult> DeleteControlTime(
            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "controltime/{id}")] HttpRequest req,
