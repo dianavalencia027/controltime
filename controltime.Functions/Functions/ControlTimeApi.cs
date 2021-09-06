@@ -10,6 +10,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace controltime.Functions.Functions
@@ -205,6 +206,42 @@ namespace controltime.Functions.Functions
                 IsSuccess = true,
                 Message = message,
                 Result = controltimeEntity
+            });
+        }
+
+        [FunctionName(nameof(GetConsolidatedMinutes))]
+        public static async Task<IActionResult> GetConsolidatedMinutes(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "consolidatedtime/{date}")] HttpRequest req,
+            [Table("consolidatedtime", Connection = "AzureWebJobsStorage")] CloudTable consolidatedTimeTable,
+            DateTime date,
+            ILogger log)
+        {
+            log.LogInformation($"Get consolidated time by date: {date}, received");
+
+            string startDate = TableQuery.GenerateFilterConditionForDate("Date", QueryComparisons.GreaterThanOrEqual, date.ToUniversalTime());
+            string endDate = TableQuery.GenerateFilterConditionForDate("Date", QueryComparisons.LessThanOrEqual, date.ToUniversalTime());
+            string filter = TableQuery.CombineFilters(startDate, TableOperators.And, endDate);
+
+            TableQuery<ConsolidatedTimeEntity> query = new TableQuery<ConsolidatedTimeEntity>().Where(filter);
+            TableQuerySegment<ConsolidatedTimeEntity> completedControlTimes = await consolidatedTimeTable.ExecuteQuerySegmentedAsync(query, null);
+
+            if (!completedControlTimes.Results.Any())
+            {
+                return new BadRequestObjectResult(new Response
+                {
+                    IsSuccess = false,
+                    Message = "Consolidated time not found"
+                });
+            }
+
+            string message = $"Consolidated time: {completedControlTimes.Count()} item(s) retrieved";
+            log.LogInformation(message);
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = completedControlTimes.Results
             });
         }
     }
