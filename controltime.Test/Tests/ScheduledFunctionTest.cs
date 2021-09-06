@@ -8,7 +8,7 @@ namespace controltime.Test.Tests
     public class ScheduledFunctionTest
     {
         [Fact]
-        public async void ScheduledFunction_Should_Log_Message()
+        public void ScheduledFunction_Should_Log_Message()
         {
             // Arrange
             MockCloudTable mockControlTime = new MockCloudTable(new Uri("http://127.0.0.1:10002/devstoreaccount1/controltime"));
@@ -16,7 +16,7 @@ namespace controltime.Test.Tests
             ListLogger logger = (ListLogger)TestFactory.CreateLogger(LoggerTypes.List);
 
             // Act
-            await ScheduledFunction.Run(null, mockControlTime, mockConsolidatedTime, logger);
+            ScheduledFunction.Run(null, mockControlTime, mockConsolidatedTime, logger);
             string message = logger.Logs[0];
 
             // Assert
