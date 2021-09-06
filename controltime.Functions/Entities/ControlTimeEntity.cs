@@ -9,8 +9,6 @@ namespace controltime.Functions.Entities
 
         public DateTime InputTime { get; set; }
 
-        //public DateTime? OutputTime { get; set; }
-
         public string Type { get; set; }
 
         public bool Consolidated { get; set; }
